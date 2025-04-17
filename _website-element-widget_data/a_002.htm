@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="sl"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lovljenje Velikonočnih Jajčk</title>
+    <script src="a_data_002/3.4.16"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+            font-family: 'Nunito', 'Arial', sans-serif;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .egg {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: wobble 1s infinite alternate;
+            z-index: 5;
+        }
+        
+        @keyframes wobble {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+        
+        #basket {
+            position: absolute;
+            bottom: 50px;
+            left: calc(50% - 60px);
+            width: 120px;
+            height: 80px;
+            transition: left 0.1s ease-out;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .grass-background {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to top, #2E7D32, #4CAF50);
+            z-index: 1;
+        }
+        
+        .grass-background::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background-image: 
+                radial-gradient(circle at 20% 0, transparent 20%, #4CAF50 20%),
+                radial-gradient(circle at 50% 0, transparent 20%, #4CAF50 20%),
+                radial-gradient(circle at 80% 0, transparent 20%, #4CAF50 20%);
+            background-size: 60px 20px;
+            background-repeat: repeat-x;
+        }
+        
+        .grass-tuft {
+            position: absolute;
+            bottom: 0;
+            z-index: 2;
+        }
+        
+        .cloud {
+            position: absolute;
+            z-index: 0;
+        }
+        
+        .score-display {
+            font-family: 'Nunito', 'Arial', sans-serif;
+            font-weight: 700;
+        }
+        
+        .controls-container {
+            position: absolute;
+            bottom: 4%;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10%;
+            z-index: 20;
+        }
+        
+        .egg-fragment {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            z-index: 5;
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.5);
+                opacity: 0;
+            }
+        }
+        
+        .timer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            z-index: 20;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .results-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .results-content {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 20px;
+            padding: 30px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .results-modal.active .results-content {
+            transform: translateY(0);
+        }
+        
+        .result-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .play-again-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .play-again-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .play-again-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sms-message {
+            background-color: #ffeb3b;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 2px dashed #ff9800;
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.16 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.absolute{position:absolute}.left-0{left:0px}.right-0{right:0px}.top-16{top:4rem}.z-20{z-index:20}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:0.25rem}.flex{display:flex}.items-center{align-items:center}.justify-center{justify-content:center}.gap-8{gap:2rem}.rounded-full{border-radius:9999px}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-opacity-80{--tw-bg-opacity:0.8}.bg-gradient-to-b{background-image:linear-gradient(to bottom, var(--tw-gradient-stops))}.from-blue-200{--tw-gradient-from:#bfdbfe var(--tw-gradient-from-position);--tw-gradient-to:rgb(191 219 254 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-blue-100{--tw-gradient-to:#dbeafe var(--tw-gradient-to-position)}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.font-bold{font-weight:700}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style></head>
+<body>
+    <div id="game-container" class="bg-gradient-to-b from-blue-200 to-blue-100">
+        <!-- Timer -->
+        <div id="timer" class="timer">0:36</div>
+        
+        <!-- Score Display -->
+        <div class="absolute top-16 left-0 right-0 flex justify-center gap-8 z-20">
+            <div class="bg-white bg-opacity-80 rounded-full px-6 py-2 shadow-lg flex items-center score-display">
+                <span class="text-green-600 font-bold text-xl">Ujeta: </span>
+                <span id="caught-count" class="text-green-600 font-bold text-xl ml-1">0</span>
+            </div>
+            <div class="bg-white bg-opacity-80 rounded-full px-6 py-2 shadow-lg flex items-center score-display">
+                <span class="text-red-600 font-bold text-xl">Zgrešena: </span>
+                <span id="missed-count" class="text-red-600 font-bold text-xl ml-1">14</span>
+            </div>
+        </div>
+        
+        <!-- Basket -->
+        <div id="basket" style="left: 405px;">
+            <svg viewBox="0 0 120 80" width="120" height="80">
+                <!-- Basket handle -->
+                <path d="M30,15 C30,0 90,0 90,15" stroke="#8B4513" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                
+                <!-- Basket body - more natural shape -->
+                <path d="M10,25 C10,25 15,20 30,20 C45,20 75,20 90,20 C105,20 110,25 110,25 L115,70 C115,70 100,75 60,75 C20,75 5,70 5,70 Z" fill="#DEB887"></path>
+                
+                <!-- Basket rim -->
+                <path d="M10,25 C10,25 15,20 30,20 C45,20 75,20 90,20 C105,20 110,25 110,25" stroke="#8B4513" stroke-width="3" fill="none"></path>
+                
+                <!-- Basket weaving - horizontal lines -->
+                <path d="M8,35 L112,35" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M6,45 L114,45" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M5,55 L115,55" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M5,65 L115,65" stroke="#8B4513" stroke-width="1.5"></path>
+                
+                <!-- Basket weaving - vertical lines -->
+                <path d="M20,20 L15,70" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M40,20 L35,70" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M60,20 L60,70" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M80,20 L85,70" stroke="#8B4513" stroke-width="1.5"></path>
+                <path d="M100,20 L105,70" stroke="#8B4513" stroke-width="1.5"></path>
+                
+                <!-- Basket shadow -->
+                <ellipse cx="60" cy="75" rx="55" ry="5" fill="rgba(0,0,0,0.2)"></ellipse>
+                
+                <!-- Easter decorations -->
+                <circle cx="30" cy="30" r="5" fill="#FF9AA2"></circle>
+                <path d="M30,30 L33,27 M30,30 L27,27 M30,30 L33,33 M30,30 L27,33" stroke="white" stroke-width="1"></path>
+                
+                <circle cx="90" cy="30" r="5" fill="#B5EAD7"></circle>
+                <path d="M90,30 L93,27 M90,30 L87,27 M90,30 L93,33 M90,30 L87,33" stroke="white" stroke-width="1"></path>
+                
+                <circle cx="60" cy="40" r="6" fill="#C7CEEA"></circle>
+                <path d="M60,40 L64,36 M60,40 L56,36 M60,40 L64,44 M60,40 L56,44 M60,40 L60,34 M60,40 L60,46" stroke="white" stroke-width="1"></path>
+            </svg>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls-container">
+            <button id="left-btn" class="control-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#333" viewBox="0 0 16 16">
+                    <path d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"></path>
+                </svg>
+            </button>
+            <button id="right-btn" class="control-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#333" viewBox="0 0 16 16">
+                    <path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Grass Background -->
+        <div class="grass-background"></div>
+        
+        <!-- Results Modal -->
+        <div id="results-modal" class="results-modal">
+            <div class="results-content">
+                <div id="result-icon" class="result-icon">🏆</div>
+                <h2 class="text-3xl font-bold mb-4">Čas je potekel!</h2>
+                <p class="text-xl mb-2">Ujeli ste <span id="final-caught" class="font-bold text-green-600">0</span> jajčk</p>
+                <p class="text-xl mb-4">Zgrešili ste <span id="final-missed" class="font-bold text-red-600">0</span> jajčk</p>
+                <div id="result-message" class="text-2xl font-bold mb-6">Odlično opravljeno!</div>
+                
+                <!-- SMS message - always displayed in yellow box -->
+                <div class="sms-message">
+                    Prosimo pošljite SMS LORA10 na 1919, HVALA iz srca
+                </div>
+                
+                <button id="play-again-btn" class="play-again-btn">Igraj ponovno</button>
+            </div>
+        </div>
+    <div class="cloud" style="top: 90.4363px; left: 227.226px;">
+                    <svg width="88.92675746172343" height="53.35605447703406" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 371.381px; left: 1193.87px;">
+                    <svg width="129.12588505921303" height="77.47553103552782" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 215.528px; left: 355.604px;">
+                    <svg width="137.50584737255548" height="82.50350842353329" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 106.264px; left: 982.698px;">
+                    <svg width="145.79943603566278" height="87.47966162139767" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 28.9282px; left: 938.162px;">
+                    <svg width="143.49996473091522" height="86.09997883854913" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 316.635px; left: 1052.89px;">
+                    <svg width="140.85812104570152" height="84.51487262742091" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 380.921px; left: 1376.31px;">
+                    <svg width="134.54543715346418" height="80.7272622920785" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="cloud" style="top: 116.752px; left: 1214.72px;">
+                    <svg width="104.38517386892433" height="62.63110432135459" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" fill="white" fill-opacity="0.9"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1379.56px;">
+                    <svg width="45.42121062568461" height="32.344116358874075" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 380.949px;">
+                    <svg width="34.08926691573742" height="43.84699573475987" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1103.12px;">
+                    <svg width="24.703978354267043" height="35.7455535715622" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 102.351px;">
+                    <svg width="32.20477637040894" height="25.5089641234797" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 700.22px;">
+                    <svg width="45.69472768685917" height="49.05955808996137" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 369.316px;">
+                    <svg width="24.649472228095938" height="41.413526249788" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 539.478px;">
+                    <svg width="37.60154375780629" height="22.422271274407557" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1243.79px;">
+                    <svg width="31.49626126983236" height="36.78451266690101" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 917.929px;">
+                    <svg width="23.31388715063836" height="43.23977936969579" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1062.26px;">
+                    <svg width="33.22532220916379" height="37.48632642122419" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 36.0672px;">
+                    <svg width="33.8721517517179" height="42.90714015530037" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 620.664px;">
+                    <svg width="38.17200130749003" height="41.37864072300206" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 493.78px;">
+                    <svg width="48.91478345659395" height="38.160506438116094" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1088.77px;">
+                    <svg width="39.68416407062084" height="24.866977169597135" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 459.592px;">
+                    <svg width="23.993410527780394" height="48.465404005296406" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 53.8647px;">
+                    <svg width="49.569087349581594" height="46.00571414223326" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 699.413px;">
+                    <svg width="31.458552971788734" height="33.91767451017689" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1059.98px;">
+                    <svg width="25.293203326534787" height="41.03213682104463" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1159.95px;">
+                    <svg width="46.715288083326385" height="40.995571513812635" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="grass-tuft" style="left: 1182.05px;">
+                    <svg width="48.7263090813928" height="20.52033766429843" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" fill="#3A9D23"></path>
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" fill="#4CAF50"></path>
+                    </svg>
+                </div><div class="egg" style="left: 939.747px; top: 656.867px; background-color: rgb(255, 183, 178); background-image: linear-gradient(to right, transparent 45%, rgba(255, 255, 255, 0.8) 45%, rgba(255, 255, 255, 0.8) 55%, transparent 55%);"></div><div class="egg" style="left: 828.01px; top: 395.245px; background-color: rgb(255, 218, 193); background-image: radial-gradient(circle at 12.7129% 39.8838%, rgba(255, 255, 255, 0.8) 2px, transparent 2px), radial-gradient(circle at 43.3219% 78.6826%, rgba(255, 255, 255, 0.8) 2px, transparent 2px), radial-gradient(circle at 8.79036% 46.6762%, rgba(255, 255, 255, 0.8) 2px, transparent 2px);"></div><div class="egg" style="left: 649.148px; top: 252.991px; background-color: rgb(255, 154, 162); background-image: repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255, 255, 255, 0.5) 5px, rgba(255, 255, 255, 0.5) 10px);"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -15.87656080106111px; --ty: -15.51030748238135px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -5.4779870579848975px; --ty: -35.232486506968804px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -29.576500619437304px; --ty: 20.209091309947468px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: 13.889972539343036px; --ty: -43.31351058323589px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: 64.70108494597481px; --ty: 23.797971186074257px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -16.600090211029116px; --ty: -40.39223934288684px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: 42.58563328343429px; --ty: -16.32937541595966px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: 27.23563667139577px; --ty: -31.513779548425095px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -0.1245420880530718px; --ty: -29.025087458864817px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: 26.944987724146433px; --ty: -57.99837530601774px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -46.7275029425856px; --ty: 1.5945457637448357px; animation: 0.8s forwards explode;"></div><div class="egg-fragment" style="background-color: rgb(226, 240, 203); left: 210.766px; top: 942px; --tx: -25.176013977109477px; --ty: 56.4230771645764px; animation: 0.8s forwards explode;"></div><div class="absolute text-4xl z-15" style="left: 200.766px; top: 922px;">💥</div></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game variables
+            let gameContainer, basket, leftBtn, rightBtn, caughtCountElement, missedCountElement;
+            let timerElement, resultsModal, finalCaughtElement, finalMissedElement;
+            let resultMessageElement, resultIconElement, playAgainBtn;
+            
+            let caughtCount = 0;
+            let missedCount = 0;
+            let basketPosition = 0;
+            let basketWidth = 120;
+            let basketHeight = 80;
+            let eggWidth = 30;
+            let eggHeight = 40;
+            let gameWidth = window.innerWidth;
+            let gameHeight = window.innerHeight;
+            let basketSpeed = 15;
+            let gameActive = false;
+            let timeLeft = 60;
+            let eggCreationInterval;
+            let activeEggs = [];
+            let timerInterval;
+            let animationFrameId;
+            let cloudAnimations = [];
+            let leftPressed = false;
+            let rightPressed = false;
+            
+            // Initialize all DOM references
+            function initDomReferences() {
+                gameContainer = document.getElementById('game-container');
+                basket = document.getElementById('basket');
+                leftBtn = document.getElementById('left-btn');
+                rightBtn = document.getElementById('right-btn');
+                caughtCountElement = document.getElementById('caught-count');
+                missedCountElement = document.getElementById('missed-count');
+                timerElement = document.getElementById('timer');
+                resultsModal = document.getElementById('results-modal');
+                finalCaughtElement = document.getElementById('final-caught');
+                finalMissedElement = document.getElementById('final-missed');
+                resultMessageElement = document.getElementById('result-message');
+                resultIconElement = document.getElementById('result-icon');
+                playAgainBtn = document.getElementById('play-again-btn');
+            }
+            
+            // Timer function
+            function startTimer() {
+                // Clear any existing timer
+                clearInterval(timerInterval);
+                
+                // Reset time
+                timeLeft = 60;
+                timerElement.textContent = "1:00";
+                
+                // Start new timer
+                timerInterval = setInterval(() => {
+                    if (!gameActive) {
+                        clearInterval(timerInterval);
+                        return;
+                    }
+                    
+                    timeLeft--;
+                    
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        endGame();
+                    }
+                }, 1000);
+            }
+            
+            // Create clouds
+            function createClouds() {
+                // Clear existing clouds
+                const existingClouds = document.querySelectorAll('.cloud');
+                existingClouds.forEach(cloud => cloud.remove());
+                
+                // Clear cloud animations
+                cloudAnimations.forEach(id => cancelAnimationFrame(id));
+                cloudAnimations = [];
+                
+                // Create new clouds
+                for (let i = 0; i < 8; i++) {
+                    createCloud();
+                }
+            }
+            
+            // Create grass tufts
+            function createGrassTufts() {
+                // Clear existing grass tufts
+                const existingTufts = document.querySelectorAll('.grass-tuft');
+                existingTufts.forEach(tuft => tuft.remove());
+                
+                // Create new grass tufts
+                for (let i = 0; i < 20; i++) {
+                    createGrassTuft();
+                }
+            }
+            
+            function createGrassTuft() {
+                const tuft = document.createElement('div');
+                tuft.className = 'grass-tuft';
+                
+                const width = Math.random() * 30 + 20;
+                const height = Math.random() * 30 + 20;
+                const left = Math.random() * gameWidth;
+                
+                // Create SVG grass tuft
+                const grassSvg = `
+                    <svg width="${width}" height="${height}" viewBox="0 0 50 50">
+                        <path d="M10,50 C10,30 5,20 5,20 C15,30 20,20 25,10 C30,20 35,30 45,20 C45,20 40,30 40,50 Z" 
+                              fill="#3A9D23" />
+                        <path d="M15,50 C15,35 20,25 20,25 C25,35 30,25 30,50 Z" 
+                              fill="#4CAF50" />
+                    </svg>
+                `;
+                
+                tuft.innerHTML = grassSvg;
+                tuft.style.left = `${left}px`;
+                
+                gameContainer.appendChild(tuft);
+            }
+            
+            function createCloud() {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                
+                // Create SVG cloud
+                const cloudSize = Math.random() * 100 + 80;
+                const cloudSvg = `
+                    <svg width="${cloudSize}" height="${cloudSize * 0.6}" viewBox="0 0 100 60">
+                        <path d="M10,40 
+                               C10,30 20,20 30,20 
+                               C35,10 50,10 55,20 
+                               C65,15 75,20 80,25 
+                               C90,20 95,30 95,40 
+                               C95,50 90,55 80,55 
+                               C75,60 65,60 60,55 
+                               C55,58 45,58 40,55 
+                               C30,60 20,55 15,50 
+                               C10,50 5,45 10,40 Z" 
+                              fill="white" fill-opacity="0.9" />
+                    </svg>
+                `;
+                
+                cloud.innerHTML = cloudSvg;
+                
+                const top = Math.random() * (gameHeight / 2.5);
+                const left = Math.random() * gameWidth;
+                
+                cloud.style.top = `${top}px`;
+                cloud.style.left = `${left}px`;
+                
+                gameContainer.appendChild(cloud);
+                
+                // Animate cloud
+                const speed = Math.random() * 0.3 + 0.1;
+                animateCloud(cloud, left, speed);
+            }
+            
+            function animateCloud(cloud, startLeft, speed) {
+                let left = startLeft;
+                
+                function moveCloud() {
+                    if (!gameActive) return;
+                    
+                    left += speed;
+                    if (left > gameWidth) {
+                        left = -parseFloat(cloud.querySelector('svg').getAttribute('width'));
+                    }
+                    cloud.style.left = `${left}px`;
+                    
+                    const animId = requestAnimationFrame(moveCloud);
+                    cloudAnimations.push(animId);
+                }
+                
+                const animId = requestAnimationFrame(moveCloud);
+                cloudAnimations.push(animId);
+            }
+            
+            // Control basket movement
+            function setupBasketMovement() {
+                // Cancel any existing animation
+                cancelAnimationFrame(animationFrameId);
+                
+                // Reset basket position
+                basketPosition = window.innerWidth / 2 - 60;
+                basket.style.left = `${basketPosition}px`;
+                
+                // Start new animation
+                function updateBasketPosition() {
+                    if (!gameActive) return;
+                    
+                    if (leftPressed) {
+                        basketPosition = Math.max(0, basketPosition - basketSpeed);
+                    }
+                    if (rightPressed) {
+                        basketPosition = Math.min(gameWidth - basketWidth, basketPosition + basketSpeed);
+                    }
+                    basket.style.left = `${basketPosition}px`;
+                    
+                    animationFrameId = requestAnimationFrame(updateBasketPosition);
+                }
+                
+                animationFrameId = requestAnimationFrame(updateBasketPosition);
+            }
+            
+            // Setup controls
+            function setupControls() {
+                // Remove existing event listeners by cloning and replacing
+                const newLeftBtn = leftBtn.cloneNode(true);
+                const newRightBtn = rightBtn.cloneNode(true);
+                
+                leftBtn.parentNode.replaceChild(newLeftBtn, leftBtn);
+                rightBtn.parentNode.replaceChild(newRightBtn, rightBtn);
+                
+                // Update references
+                leftBtn = document.getElementById('left-btn');
+                rightBtn = document.getElementById('right-btn');
+                
+                // Touch controls
+                leftBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    leftPressed = true;
+                }, { passive: false });
+                
+                leftBtn.addEventListener('touchend', () => {
+                    leftPressed = false;
+                });
+                
+                rightBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    rightPressed = true;
+                }, { passive: false });
+                
+                rightBtn.addEventListener('touchend', () => {
+                    rightPressed = false;
+                });
+                
+                // Mouse controls
+                leftBtn.addEventListener('mousedown', () => {
+                    leftPressed = true;
+                });
+                
+                leftBtn.addEventListener('mouseup', () => {
+                    leftPressed = false;
+                });
+                
+                leftBtn.addEventListener('mouseleave', () => {
+                    leftPressed = false;
+                });
+                
+                rightBtn.addEventListener('mousedown', () => {
+                    rightPressed = true;
+                });
+                
+                rightBtn.addEventListener('mouseup', () => {
+                    rightPressed = false;
+                });
+                
+                rightBtn.addEventListener('mouseleave', () => {
+                    rightPressed = false;
+                });
+            }
+            
+            // Setup keyboard controls
+            function setupKeyboardControls() {
+                // Remove existing event listeners
+                document.removeEventListener('keydown', handleKeyDown);
+                document.removeEventListener('keyup', handleKeyUp);
+                
+                // Add new event listeners
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
+            }
+            
+            function handleKeyDown(e) {
+                if (!gameActive) return;
+                if (e.key === 'ArrowLeft') leftPressed = true;
+                if (e.key === 'ArrowRight') rightPressed = true;
+            }
+            
+            function handleKeyUp(e) {
+                if (e.key === 'ArrowLeft') leftPressed = false;
+                if (e.key === 'ArrowRight') rightPressed = false;
+            }
+            
+            // Create egg explosion effect
+            function createEggExplosion(x, y, color) {
+                // Create multiple fragments
+                for (let i = 0; i < 12; i++) {
+                    const fragment = document.createElement('div');
+                    fragment.className = 'egg-fragment';
+                    fragment.style.backgroundColor = color;
+                    fragment.style.left = `${x}px`;
+                    fragment.style.top = `${y}px`;
+                    
+                    // Random direction for each fragment
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 50 + 20;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    fragment.style.setProperty('--tx', `${tx}px`);
+                    fragment.style.setProperty('--ty', `${ty}px`);
+                    fragment.style.animation = 'explode 0.8s forwards';
+                    
+                    gameContainer.appendChild(fragment);
+                    
+                    // Remove fragment after animation
+                    setTimeout(() => {
+                        if (fragment.parentNode) {
+                            fragment.remove();
+                        }
+                    }, 800);
+                }
+                
+                // Create a "crack" effect
+                const crack = document.createElement('div');
+                crack.className = 'absolute text-4xl z-15';
+                crack.style.left = `${x - 10}px`;
+                crack.style.top = `${y - 20}px`;
+                crack.textContent = '💥';
+                gameContainer.appendChild(crack);
+                
+                setTimeout(() => {
+                    if (crack.parentNode) {
+                        crack.remove();
+                    }
+                }, 800);
+            }
+            
+            // Create eggs
+            function startCreatingEggs() {
+                // Clear any existing interval
+                clearTimeout(eggCreationInterval);
+                
+                // Start creating eggs
+                function createEgg() {
+                    if (!gameActive) return;
+                    
+                    const egg = document.createElement('div');
+                    egg.className = 'egg';
+                    
+                    // Random position
+                    const left = Math.random() * (gameWidth - eggWidth);
+                    
+                    // Random color
+                    const colors = ['#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA', '#F8ED62', '#FFC3A0'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    egg.style.left = `${left}px`;
+                    egg.style.top = '0px';
+                    egg.style.backgroundColor = color;
+                    
+                    // Add egg pattern
+                    const pattern = Math.floor(Math.random() * 5);
+                    if (pattern === 1) {
+                        egg.style.backgroundImage = `
+                            radial-gradient(circle at ${Math.random() * 100}% ${Math.random() * 100}%, rgba(255,255,255,0.8) 2px, transparent 2px),
+                            radial-gradient(circle at ${Math.random() * 100}% ${Math.random() * 100}%, rgba(255,255,255,0.8) 2px, transparent 2px),
+                            radial-gradient(circle at ${Math.random() * 100}% ${Math.random() * 100}%, rgba(255,255,255,0.8) 2px, transparent 2px)
+                        `;
+                    } else if (pattern === 2) {
+                        egg.style.backgroundImage = `
+                            linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.8) 45%, rgba(255,255,255,0.8) 55%, transparent 55%)
+                        `;
+                    } else if (pattern === 3) {
+                        egg.style.backgroundImage = `
+                            linear-gradient(to right, transparent 45%, rgba(255,255,255,0.8) 45%, rgba(255,255,255,0.8) 55%, transparent 55%)
+                        `;
+                    } else if (pattern === 4) {
+                        egg.style.backgroundImage = `
+                            repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255,255,255,0.5) 5px, rgba(255,255,255,0.5) 10px)
+                        `;
+                    }
+                    
+                    gameContainer.appendChild(egg);
+                    activeEggs.push({element: egg, left: left, animationId: null});
+                    
+                    // Animate egg falling
+                    let top = 0;
+                    const speed = Math.random() * 2 + 2;
+                    
+                    function fall() {
+                        if (!gameActive) return;
+                        
+                        top += speed;
+                        
+                        // Check if egg still exists in DOM
+                        if (!egg.isConnected) return;
+                        
+                        egg.style.top = `${top}px`;
+                        
+                        // Check if egg is caught
+                        if (top > gameHeight - basketHeight - eggHeight - 50 && 
+                            top < gameHeight - 40 &&
+                            left + eggWidth > basketPosition && 
+                            left < basketPosition + basketWidth) {
+                            
+                            // Egg is caught
+                            if (egg.parentNode) {
+                                egg.remove();
+                            }
+                            
+                            // Remove from active eggs
+                            const index = activeEggs.findIndex(e => e.element === egg);
+                            if (index > -1) {
+                                cancelAnimationFrame(activeEggs[index].animationId);
+                                activeEggs.splice(index, 1);
+                            }
+                            
+                            caughtCount++;
+                            caughtCountElement.textContent = caughtCount;
+                            
+                            // Visual feedback
+                            const splash = document.createElement('div');
+                            splash.className = 'absolute text-4xl z-15';
+                            splash.style.left = `${left}px`;
+                            splash.style.top = `${gameHeight - basketHeight - 40}px`;
+                            splash.textContent = '✨';
+                            gameContainer.appendChild(splash);
+                            
+                            setTimeout(() => {
+                                if (splash.parentNode) {
+                                    splash.remove();
+                                }
+                            }, 500);
+                            
+                            return;
+                        }
+                        
+                        // Check if egg is missed and hits the ground
+                        if (top > gameHeight - 40) { // Just above the grass
+                            if (egg.parentNode) {
+                                egg.remove();
+                            }
+                            
+                            // Remove from active eggs
+                            const index = activeEggs.findIndex(e => e.element === egg);
+                            if (index > -1) {
+                                cancelAnimationFrame(activeEggs[index].animationId);
+                                activeEggs.splice(index, 1);
+                            }
+                            
+                            missedCount++;
+                            missedCountElement.textContent = missedCount;
+                            
+                            // Create explosion effect
+                            createEggExplosion(left + eggWidth/2, gameHeight - 40, color);
+                            
+                            return;
+                        }
+                        
+                        // Continue animation
+                        const animId = requestAnimationFrame(fall);
+                        
+                        // Update animation ID in activeEggs
+                        const index = activeEggs.findIndex(e => e.element === egg);
+                        if (index > -1) {
+                            activeEggs[index].animationId = animId;
+                        }
+                    }
+                    
+                    // Start falling animation
+                    const animId = requestAnimationFrame(fall);
+                    
+                    // Update animation ID in activeEggs
+                    const index = activeEggs.findIndex(e => e.element === egg);
+                    if (index > -1) {
+                        activeEggs[index].animationId = animId;
+                    }
+                    
+                    // Create next egg
+                    if (gameActive) {
+                        eggCreationInterval = setTimeout(createEgg, Math.random() * 1500 + 500);
+                    }
+                }
+                
+                // Start creating eggs after a short delay
+                eggCreationInterval = setTimeout(createEgg, 1000);
+            }
+            
+            // End game function
+            function endGame() {
+                gameActive = false;
+                
+                // Clear all intervals and animations
+                clearTimeout(eggCreationInterval);
+                cancelAnimationFrame(animationFrameId);
+                clearInterval(timerInterval);
+                
+                cloudAnimations.forEach(id => cancelAnimationFrame(id));
+                cloudAnimations = [];
+                
+                // Remove all active eggs with explosion effect
+                activeEggs.forEach(eggObj => {
+                    if (eggObj.element.parentNode) {
+                        const left = parseInt(eggObj.element.style.left);
+                        const top = parseInt(eggObj.element.style.top);
+                        const color = eggObj.element.style.backgroundColor;
+                        createEggExplosion(left + eggWidth/2, top + eggHeight/2, color);
+                        eggObj.element.remove();
+                        
+                        if (eggObj.animationId) {
+                            cancelAnimationFrame(eggObj.animationId);
+                        }
+                    }
+                });
+                activeEggs = [];
+                
+                // Update final results
+                finalCaughtElement.textContent = caughtCount;
+                finalMissedElement.textContent = missedCount;
+                
+                // Set result message and icon based on performance
+                if (caughtCount > missedCount * 2) {
+                    resultMessageElement.textContent = "Neverjetno! Vi ste prvak v lovljenju jajčk!";
+                    resultIconElement.textContent = "🏆";
+                } else if (caughtCount > missedCount) {
+                    resultMessageElement.textContent = "Odlično! Ujeli ste več jajčk, kot ste jih zgrešili!";
+                    resultIconElement.textContent = "🌟";
+                } else if (caughtCount === missedCount) {
+                    resultMessageElement.textContent = "Ni slabo! Ujeli ste toliko jajčk, kot ste jih zgrešili.";
+                    resultIconElement.textContent = "👍";
+                } else {
+                    resultMessageElement.textContent = "Več sreče prihodnjič!";
+                    resultIconElement.textContent = "🥚";
+                }
+                
+                // Show results modal
+                setTimeout(() => {
+                    resultsModal.classList.add('active');
+                }, 1000);
+            }
+            
+            // Clean up game elements
+            function cleanupGame() {
+                // Clear all intervals and animations
+                clearTimeout(eggCreationInterval);
+                cancelAnimationFrame(animationFrameId);
+                clearInterval(timerInterval);
+                
+                cloudAnimations.forEach(id => cancelAnimationFrame(id));
+                cloudAnimations = [];
+                
+                // Remove all eggs
+                const eggs = document.querySelectorAll('.egg');
+                eggs.forEach(egg => egg.remove());
+                
+                // Remove all fragments
+                const fragments = document.querySelectorAll('.egg-fragment');
+                fragments.forEach(fragment => fragment.remove());
+                
+                // Reset active eggs
+                activeEggs = [];
+            }
+            
+            // Initialize game
+            function initGame() {
+                // Clean up any existing game
+                cleanupGame();
+                
+                // Reset game state
+                caughtCount = 0;
+                missedCount = 0;
+                gameActive = true;
+                leftPressed = false;
+                rightPressed = false;
+                
+                // Update UI
+                caughtCountElement.textContent = '0';
+                missedCountElement.textContent = '0';
+                
+                // Create environment
+                createClouds();
+                createGrassTufts();
+                
+                // Setup controls
+                setupControls();
+                setupBasketMovement();
+                
+                // Start timer
+                startTimer();
+                
+                // Start creating eggs
+                startCreatingEggs();
+            }
+            
+            // Handle window resize
+            function handleResize() {
+                gameWidth = window.innerWidth;
+                gameHeight = window.innerHeight;
+                
+                // Adjust basket position
+                basketPosition = Math.min(basketPosition, gameWidth - basketWidth);
+                basket.style.left = `${basketPosition}px`;
+                
+                // Recreate environment
+                createClouds();
+                createGrassTufts();
+            }
+            
+            // Setup play again button
+            function setupPlayAgainButton() {
+                // Remove existing event listener
+                const newPlayAgainBtn = playAgainBtn.cloneNode(true);
+                playAgainBtn.parentNode.replaceChild(newPlayAgainBtn, playAgainBtn);
+                
+                // Update reference
+                playAgainBtn = document.getElementById('play-again-btn');
+                
+                // Add new event listener
+                playAgainBtn.addEventListener('click', () => {
+                    // Hide modal
+                    resultsModal.classList.remove('active');
+                    
+                    // Start new game after a short delay
+                    setTimeout(() => {
+                        initGame();
+                    }, 100);
+                });
+            }
+            
+            // Main initialization
+            function init() {
+                // Initialize DOM references
+                initDomReferences();
+                
+                // Setup keyboard controls
+                setupKeyboardControls();
+                
+                // Setup play again button
+                setupPlayAgainButton();
+                
+                // Handle window resize
+                window.addEventListener('resize', handleResize);
+                
+                // Prevent default behavior for touch events on control buttons
+                document.addEventListener('touchmove', (e) => {
+                    if (e.target.closest('.control-btn')) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                // Start the game
+                initGame();
+            }
+            
+            // Start everything
+            init();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'931c5d1c35afb86d',t:'MTc0NDg5NzUzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><iframe height="1" width="1" style="position: absolute; top: 0px; left: 0px; border: medium; visibility: hidden;"></iframe>
+</body></html>
